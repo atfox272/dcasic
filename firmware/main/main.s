@@ -7,6 +7,12 @@ MAIN_PROG:
     addi x4, x0, 0xff0  # Use 4 interrupt sources
     maskirq x5, x4      # Set the interrupt mask
 #####################################################
+##### Global variable :v (used 3 GP regsiters) ######
+#####################################################
+    addi x13, x0, 1     # 1-RGB || 0-Gray
+    addi x14, x0, 320   # Width of output frame
+    addi x15, x0, 240   # Height of output frame
+#####################################################
 ####### Configure the SCCB Master Controller ########
 #####################################################
 #   x4: temporary value
@@ -311,12 +317,12 @@ FLAG_5:
 # DBI_FRAME_WIDTH register
     lui x5, 0x20000     # Base address of DBI TX Controller
     addi x6, x5, 0x02   # DBI_FRAME_WIDTH register address
-    addi x4, x0, 320    # Width of the display frame
+    add x4, x0, x14     # Width of the display frame (stored in x14)
     sw x4, 0(x6)
 # DBI_FRAME_HEIGHT register
     lui x5, 0x20000     # Base address of DBI TX Controller
     addi x6, x5, 0x03   # DBI_FRAME_HEIGHT register address
-    addi x4, x0, 240    # Height of the display frame
+    add x4, x0, x15     # Height of the display frame (stored in x15)
     sw x4, 0(x6)
 # DBI_MEM_COM register
     addi x5, x5, 0x01
@@ -330,8 +336,16 @@ FLAG_5:
 #####################################################
 ######### Configure the DVP RX Controller ###########
 #####################################################
+# x4: Temporary (data)
+# x5: DVP RX Controller's base address 
+# x6: Temporary (reg address)
+# x7: Number of word in a row
 # Load DVP RX Controller's base address to register x5
     lui x5, 0x40000
+# Calculate the number of word in a row with formula = (x14 * ((x13+1)*8) / 256)
+    slli x7, x14, 3 # x7 = x14 * 8
+    sll x7, x7, x13 # x7 = (x14 * 8) * (x13 + 1)
+    srli x7, x7, 8  # x7 = ((x14 * 8) * (x13 + 1)) / 256
 # CAM_RX_EN register
     addi x6, x5, 0x00 # Reg address: 0x4000_0000
     addi x4, x0, 0x01 # Enable the RX Controller
@@ -398,15 +412,15 @@ FLAG_5:
     sw x4, 0(x6)
 # TRANSFER_X_LEN register
     addi x6, x5, 0x0B # Reg address: 0x5000_000B
-    addi x4, x0, 9    # Set width of processed image: (9+1)*256/8 (320)
+    addi x4, x7, -1   # = row_word_num - 1 
     sw x4, 0(x6)
 # TRANSFER_Y_LEN register
     addi x6, x5, 0x0C # Reg address: 0x5000_000C
-    addi x4, x0, 239  # Set height of processed image: 240
+    addi x4, x15, -1  # = height - 1
     sw x4, 0(x6)
 # DST_STRIDE register
     addi x6, x5, 0x0E # Reg address: 0x5000_000E
-    addi x4, x0, 10  # Set width of processed image: 10*256/8 (320)
+    add x4, x0, x7    # = row_word_num
     sw x4, 0(x6)
 # TRANSFER_SUBMIT register
     lui x6, 0x00001     # RW1S offset: 0x1000
@@ -482,7 +496,7 @@ FLAG_5:
     sw x4, 0(x5)
 # TRANSFER_Y_LEN[0] register
     addi x5, x7, 0x0C   # register_address = DMA_base_address + register_offset 
-    addi x4, x0, 239    
+    addi x4, x15, -1    
     sw x4, 0(x5)
 # SRC_STRIDE[0] register
     addi x5, x7, 0x0D   # register_address = DMA_base_address + register_offset 
@@ -539,7 +553,7 @@ FLAG_5:
     sw x4, 0(x5)
 # TRANSFER_Y_LEN[1] register
     addi x5, x8, 0x0C   # register_address = DMA_base_address + register_offset 
-    addi x4, x0, 239    
+    addi x4, x15, -1    
     sw x4, 0(x5)
 # SRC_STRIDE[1] register
     addi x5, x8, 0x0D   # register_address = DMA_base_address + register_offset 

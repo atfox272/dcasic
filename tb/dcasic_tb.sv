@@ -10,7 +10,7 @@
 `define RST_DLY_START   3
 `define RST_DUR         9
 
-`define END_TIME        500000000
+`define END_TIME        450000000
 
 // DVP Physical characteristic
 // -- t_PDV = 5 ns = (5/INTERNAL_CLK_PERIOD)*DUT_CLK_PERIOD = (5/8)*2
@@ -60,8 +60,11 @@ module dcasic_tb;
     assign rx_drv   = tx;
 
     dcasic #(
-        .BOOTLOADER_FILE(`BOOTLOADER_PATH),
-        .INTERNAL_CLK   (INTERNAL_CLK)
+        .BOOTLOADER_FILE    (`BOOTLOADER_PATH),
+        .INTERNAL_CLK       (INTERNAL_CLK),
+        .I_IMG_GRAYSCALE    (0),
+        .I_IMG_DOWNSCALE    (1),
+        .I_DOWNSCALE_TYPE   ("MAX-POOLING")
     ) dut (
         .*
     );

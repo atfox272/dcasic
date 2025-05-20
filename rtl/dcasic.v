@@ -19,9 +19,9 @@ module dcasic #(
     // -- Input pixel
     parameter I_PXL_FORMAT      = "RGB", // "RGB": RGB565 || "GRAY": Grayscale
     // -- Input Scaler -> To reduce the RAM resource in the Frame Memory
-    parameter I_IMG_GRAYSCALE   = 1,    
+    parameter I_IMG_GRAYSCALE   = 0,    
     parameter I_IMG_DOWNSCALE   = 1,
-    parameter I_DOWNSCALE_TYPE  = "AVR-POOLING"  // Downscale Type - "AVR-POOLING": Average Pooling || "MAX-POOLING": Max pooling
+    parameter I_DOWNSCALE_TYPE  = "MAX-POOLING"  // Downscale Type - "AVR-POOLING": Average Pooling || "MAX-POOLING": Max pooling
 
 ) (
     input                       sys_clk,
@@ -78,7 +78,7 @@ module dcasic #(
     localparam CBUS_M_ID_W              = 1;    // 1 masters
     localparam CBUS_S_ID_W              = CBUS_M_ID_W + CBUS_MST_MAP_W;
     localparam CBUS_BURST_W             = 2;    // Width of xBURST 
-    localparam CBUS_LEN_W               = 8;
+    localparam CBUS_LEN_W               = 9;
     localparam CBUS_SIZE_W              = 3;
     localparam CBUS_RESP_W              = 2;
     localparam CBUS_OUST_AMT            = 2;    // Number of outstanding transacitons in the BUS

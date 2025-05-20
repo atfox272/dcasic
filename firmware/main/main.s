@@ -4,7 +4,7 @@ MAIN_PROG:
 #####################################################
 #   x4: temporary value
 #   x5: temporary value
-    addi x4, x0, 0xff0  # Use 4 interrupt sources
+    addi x4, x0, 0x7f0  # Use 4 interrupt sources
     maskirq x5, x4      # Set the interrupt mask
 #####################################################
 ##### Global variable :v (used 3 GP regsiters) ######
@@ -432,6 +432,7 @@ FLAG_5:
 #####################################################
 ####### Configure Direted-memory-access (DMA) #######
 #####################################################
+# x3: Number of word in a row
 # x4: Temporary (data)
 # x5: Temporary (address)
 # x6: DMA base address
@@ -440,9 +441,9 @@ FLAG_5:
 # Load DMA Controller's base address to register x6
     lui x6, 0x80000
 # Calculate the number of word in a row with formula = (x14 * ((x13+1)*8) / 256)
-    slli x9, x14, 3 # x9 = x14 * 8
-    sll x9, x9, x13 # x9 = (x14 * 8) * (x13 + 1)
-    srli x9, x9, 8  # x9 = ((x14 * 8) * (x13 + 1)) / 256
+    slli x3, x14, 3 # x3 = x14 * 8
+    sll x3, x3, x13 # x3 = (x14 * 8) * (x13 + 1)
+    srli x3, x3, 8  # x3 = ((x14 * 8) * (x13 + 1)) / 256
 # Load offset of channel 0 to x5
     addi x5, x0, 0x00   # For channel 0
     slli x5, x5, 4      # Convert to channel offset (chn_idx << 4)
@@ -494,9 +495,9 @@ FLAG_5:
     addi x5, x7, 0x0A   # register_address = DMA_base_address + register_offset 
     addi x4, x0, 0x00   # TDEST_MASK for DBI TX Controller  
     sw x4, 0(x5)
-# TRANSFER_X_LEN[0] register TODO
+# TRANSFER_X_LEN[0] register
     addi x5, x7, 0x0B   # register_address = DMA_base_address + register_offset 
-    addi x4, x9, -1     # = row_word_num - 1     
+    addi x4, x3, -1     # = row_word_num - 1     
     sw x4, 0(x5)
 # TRANSFER_Y_LEN[0] register
     addi x5, x7, 0x0C   # register_address = DMA_base_address + register_offset 
@@ -504,7 +505,11 @@ FLAG_5:
     sw x4, 0(x5)
 # SRC_STRIDE[0] register
     addi x5, x7, 0x0D   # register_address = DMA_base_address + register_offset 
-    addi x4, x0, x9     # = row_word_num    
+    add x4, x0, x3      # = row_word_num    
+    sw x4, 0(x5) 
+# DST_STRIDE[0] register
+    addi x5, x7, 0x0E   # register_address = DMA_base_address + register_offset 
+    add x4, x0, x3      # = row_word_num    
     sw x4, 0(x5) 
 # # TRANSFER_SUBMIT[0] register
 #     lui x5, 0x00001     # RW1S offset: 0x1000
@@ -553,7 +558,7 @@ FLAG_5:
     sw x4, 0(x5)
 # TRANSFER_X_LEN[1] register
     addi x5, x8, 0x0B   # register_address = DMA_base_address + register_offset 
-    addi x4, x9, -1     # = row_word_num - 1     
+    addi x4, x3, -1     # = row_word_num - 1     
     sw x4, 0(x5)
 # TRANSFER_Y_LEN[1] register
     addi x5, x8, 0x0C   # register_address = DMA_base_address + register_offset 
@@ -561,7 +566,11 @@ FLAG_5:
     sw x4, 0(x5)
 # SRC_STRIDE[1] register
     addi x5, x8, 0x0D   # register_address = DMA_base_address + register_offset 
-    addi x4, x0, x9     # = row_word_num    
+    add x4, x0, x3      # = row_word_num    
+    sw x4, 0(x5) 
+# DST_STRIDE[1] register
+    addi x5, x8, 0x0E   # register_address = DMA_base_address + register_offset 
+    add x4, x0, x3      # = row_word_num    
     sw x4, 0(x5) 
 # # TRANSFER_SUBMIT[1] register
 #     lui x5, 0x00001     # RW1S offset: 0x1000

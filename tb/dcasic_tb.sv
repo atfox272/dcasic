@@ -10,7 +10,7 @@
 `define RST_DLY_START   3
 `define RST_DUR         9
 
-`define END_TIME        450000000
+`define END_TIME        430000000
 
 // DVP Physical characteristic
 // -- t_PDV = 5 ns = (5/INTERNAL_CLK_PERIOD)*DUT_CLK_PERIOD = (5/8)*2
@@ -23,6 +23,12 @@ module dcasic_tb;
     parameter INTERNAL_CLK      = 50_000_000;
     parameter DVP_DATA_W        = 8;
     parameter DBI_IF_D_W        = 8;
+    parameter I_IMG_GRAYSCALE   = 0;
+    parameter I_IMG_DOWNSCALE   = 1;
+    parameter I_DOWNSCALE_TYPE  = "MAX-POOLING";  // Downscale Type - "AVR-POOLING": Average Pooling || "MAX-POOLING": Max pooling
+
+    parameter O_IMG_WIDTH  = (I_IMG_DOWNSCALE == 1) ? 320 : 640;
+    parameter O_IMG_HEIGHT = (I_IMG_DOWNSCALE == 1) ? 240 : 480;
 
     logic                       sys_clk;
     logic                       sys_trap;
@@ -62,9 +68,9 @@ module dcasic_tb;
     dcasic #(
         .BOOTLOADER_FILE    (`BOOTLOADER_PATH),
         .INTERNAL_CLK       (INTERNAL_CLK),
-        .I_IMG_GRAYSCALE    (0),
-        .I_IMG_DOWNSCALE    (1),
-        .I_DOWNSCALE_TYPE   ("MAX-POOLING")
+        .I_IMG_GRAYSCALE    (I_IMG_GRAYSCALE),
+        .I_IMG_DOWNSCALE    (I_IMG_DOWNSCALE),
+        .I_DOWNSCALE_TYPE   (I_DOWNSCALE_TYPE)
     ) dut (
         .*
     );
@@ -447,7 +453,7 @@ module dcasic_tb;
 
     localparam DBI_CONF_IDLE    = 2'd0;
     localparam DBI_CONF_TX      = 2'd1;
-    reg [15:0] output_img [0:320*240-1];
+    reg [15:0] output_img [0:O_IMG_WIDTH*O_IMG_HEIGHT-1];
 
     int dbi_conf_st             = DBI_CONF_IDLE;
     int dbi_img_rc_st           = DBI_IMG_IDLE;
@@ -477,7 +483,8 @@ module dcasic_tb;
                     output_img[dbi_d_cnt/2][7:0] <= dbi_d_o;
                 end
                 dbi_d_cnt <= dbi_d_cnt + 1;
-                if(dbi_d_cnt == 320*240*2 - 1) begin    // Output image size is 320x240 (2 data/pixel)
+                if(dbi_d_cnt == O_IMG_WIDTH*O_IMG_HEIGHT*2 - 1) begin    // Output image size is 320x240 (2 data/pixel)
+                    // $display("[INFO]: Stream out  - %d", dbi_d_cnt/2);
                     dbi_img_rc_st <= DBI_IMG_IDLE;
                     dbi_d_cnt <= 0;
                     #1; $writememh(`IMG_O_PATH, output_img);
